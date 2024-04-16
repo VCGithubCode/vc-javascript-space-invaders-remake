@@ -1,17 +1,42 @@
-// Test script to make sure link from index.html is working
-function displayWorkingMessage() {
-  try {
-    const paragraphElement = document.createElement("p");
-    paragraphElement.innerHTML = "It's working. Yay!";
-    document.body.appendChild(paragraphElement);
-
-    const bodyFirstChild = document.getElementFirstChild("body");
-    if (bodyFirstChild) {
-      bodyFirstChild.classList.add("red");
-    }
-  } catch (error) {
-    console.error(error);
+class Player {
+  constructor(game) {
+    this.game = game;
+    this.width = 100;
+    this.height = 100;
+    this.x = this.game.width * 0.5 - this.width * 0.5;
+    this.y = this.game.height - this.height;
+  }
+  draw(context) {
+    context.fillRect(this.x, this.y, this.width, this.height);
   }
 }
 
-displayWorkingMessage();
+class Projectile {
+
+}
+
+class Enemy {
+
+}
+
+class Game {
+  constructor(canvas){
+    this.canvas = canvas;
+    this.width = this.canvas.width;
+    this.height = this.canvas.height;
+    this.player = new Player(this);
+  }
+  render(context) {
+    this.player.draw(context);
+    }
+}
+
+window.addEventListener('load', function () {
+  const canvas = document.getElementById('canvas1');
+  const ctx = canvas.getContext('2d');
+  canvas.width = 600;
+  canvas.height = 800;
+
+  const game = new Game(canvas);
+  game.render(ctx);
+});
