@@ -79,6 +79,11 @@ class Enemy {
         this.game.score++;
       }
     });
+    //lose condition
+    if (this.y + this.height > this.game.height) {
+      this.game.gameOver = true;
+      this.markedForDeletion = true;
+    }
   }
 }
 
@@ -138,8 +143,9 @@ class Game {
     
     this.waves = [];
     this.waves.push(new Wave(this));
-
+    
     this.score = 0;
+    this.gameOver = false;
 
     // event listeners
     window.addEventListener('keydown', e => {
@@ -185,8 +191,18 @@ class Game {
     )
   }
   drawStatusText(context) {
+    context.save();
+    context.shadowOffsetX = 2;
+    context.shadowOffsetY = 2;
+    context.shadowColor = 'black';
     context.fillText('Score: ' + this.score, 20, 40);
-   }
+    if (this.gameOver) {
+    context.textAlign = 'center'
+    context.font = "100px Impact";
+      context.fillText('GAME OVER!', this.width * 0.5, this.height * 0.5);
+    }
+  context.restore();
+  }
 }
 
 window.addEventListener('load', function () {
