@@ -105,7 +105,7 @@ class Enemy {
       this.markedForDeletion = true;
     }
   }
-    history(damage) {
+    hit(damage) {
       this.lives -= damage;
   }
 }
