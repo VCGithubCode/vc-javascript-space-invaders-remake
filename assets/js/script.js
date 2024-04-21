@@ -150,6 +150,7 @@ class Game {
     this.projectilesPool = [];
     this.numberOfProjectiles = 10;
     this.createProjectiles();
+    this.fired = false;
     
     this.columns = 2;
     this.rows = 2;
@@ -164,11 +165,13 @@ class Game {
 
     // event listeners
     window.addEventListener('keydown', e => {
+      if (e.key === '1' && !this.fired) this.player.shoot();
+      this.fired = true;
       if (this.keys.indexOf(e.key) === -1) this.keys.push(e.key);
-      if (e.key === '1') this.player.shoot();
       if (e.key === 'r' && this.gameOver) this.restart();
     });
     window.addEventListener('keyup', e => {
+      this.fired = false;
       const index = this.keys.indexOf(e.key);
       if (index > -1) this.keys.splice(index, 1);
     });
