@@ -6,3 +6,7 @@
     transform: translate(-50%, -50%);
     background-image: url('../images/background.png');
 }
+
+#beetlemorph {
+    display: none;
+}
