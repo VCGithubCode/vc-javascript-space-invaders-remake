@@ -7,6 +7,7 @@ class Player {
     this.y = this.game.height - this.height;
     this.speed = 5;
     this.lives = 3;
+    this.maxLives = 10;
     this.image = document.getElementById('player');
     this.jets_image = document.getElementById('player_jets');
     this.frameX = 0;
@@ -114,16 +115,13 @@ class Enemy {
       }
     }
     //check collision enemies - player
-    if (this.game.checkCollision(this, this.game.player)) {
-      this.markedForDeletion = true;
-      if (!this.game.gameOver && this.game.score > 0) this.game.score--;
+    if (this.game.checkCollision(this, this.game.player) && this.lives > 0) {
+      this.lives = 0;
       this.game.player.lives--;
-      if (this.game.player.lives < 1) this.game.gameOver = true;
     }
     //lose condition
-    if (this.y + this.height > this.game.height) {
+    if (this.y + this.height > this.game.height || this.game.player.lives < 1) {
       this.game.gameOver = true;
-      this.markedForDeletion = true;
     }
   }
     hit(damage) {
@@ -191,12 +189,12 @@ class Game {
     this.player = new Player(this);
 
     this.projectilesPool = [];
-    this.numberOfProjectiles = 10;
+    this.numberOfProjectiles = 15;
     this.createProjectiles();
     this.fired = false;
     
-    this.columns = 2;
-    this.rows = 2;
+    this.columns = 1;
+    this.rows = 1;
     this.enemySize = 80;
     
     this.waves = [];
@@ -205,7 +203,7 @@ class Game {
 
     this.spriteUpdate = false;
     this.spriteTimer = 0;
-    this.spriteInterval = 120;
+    this.spriteInterval = 150;
 
     this.score = 0;
     this.gameOver = false;
@@ -232,6 +230,7 @@ class Game {
       this.spriteUpdate = false;
       this.spriteTimer += deltaTime;
     }
+
     this.drawStatusText(context);
     this.projectilesPool.forEach(projectile => {
       projectile.update();
@@ -245,7 +244,7 @@ class Game {
         this.newWave();
         this.waveCount++;
         wave.nextWaveTrigger = true;
-        this.player.lives++;
+        if (this.player.lives < this.player.maxLives) this.player.lives++;
       }
     })
   }
@@ -277,8 +276,11 @@ class Game {
     context.shadowColor = 'black';
     context.fillText('Score: ' + this.score, 20, 40);
     context.fillText('Wave: ' + this.waveCount, 20, 80);
+    for (let i = 0; i < this.player.maxLives; i++) {
+      context.strokeRect(20 + 20 * i,100,10,15);
+    }
     for (let i = 0; i < this.player.lives; i++) {
-      context.fillRect(20 +10 * i,100,5,20);
+      context.fillRect(20 + 20 * i,100,10,15);
     }
     if (this.gameOver) {
       context.textAlign = 'center'
@@ -316,7 +318,6 @@ window.addEventListener('load', function () {
   canvas.height = 800;
   ctx.fillStyle = "white";
   ctx.strokeStyle = "white";
-  ctx.lineWidth = 5;
   ctx.font = '30px Impact';
 
   const game = new Game(canvas);
