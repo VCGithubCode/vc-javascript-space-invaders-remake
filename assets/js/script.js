@@ -157,6 +157,67 @@ class Rhinomorph extends Enemy {
   }
 }
 
+class Boss {
+  constructor(game) {
+    this.game = game;
+    this.width = 200;
+    this.height = 200;
+    this.x = this.game.width * 0.5 - this.width * 0.5;
+    this.y = - this.height;
+    this.speedX = Math.random() < 0.5 ? -1 : 1;
+    this.speedY = 0;
+    this.lives = 10;
+    this.maxLives = this.lives;
+    this.markedForDeletion = false;
+    this.image = document.getElementById('boss');
+    this.frameX = 0;
+    this.frameY = Math.floor(Math.random() * 4);
+    this.maxFrame = 11;
+  }
+  draw(context) {
+    context.drawImage(this.image, this.frameX * this.width, this.frameY * this.height, this.width, this.height, this.x, this.y, this.width, this.height);
+    if (this.lives > 0) {
+      context.save();
+      context.textAlign = 'center';
+      context.shadowOffsetX = 3;
+      context.shadowOffsetY = 3;
+      context.shadowColor = 'black';
+      context.fillText(this.lives, this.x + this.width * 0.5, this.y + 50);
+      context.restore();
+    }
+  }
+  update() {
+    this.speedY = 0;
+    if (this.game.spriteUpdate && this.lives > 0) this.frameX = 0;
+    if (this.y < 0) this.y += 4;
+    if (this.x < 0 || this.x > this.game.width - this.width) {
+      this.speedX *= -1;
+      this.speedY = this.height * 0.5;
+    }
+    this.x += this.speedX;
+    this.y += this.speedY;
+    // collision detection boss/projectiles
+    this.game.projectilesPool.forEach(projectile => {
+      if (this.game.checkCollision(this, projectile) && !projectile.free && this.lives > 0) {
+        this.hit(1);
+        projectile.reset();
+      }
+    });
+  // boss destroyed
+    if (this.lives < 1 && this.game.spriteUpdate) {
+      this.frameX++;
+      if(this.frameX > this.maxFrame) {
+        this.markedForDeletion = true;
+        this.game.score += this.maxLives;
+      }
+  }
+}
+  hit(damage) {
+    this.lives -= damage;
+    if (this.lives > 0) this.frameX = 1;
+  }
+}
+
 class Wave {
   constructor(game) {
     this.game = game;
@@ -168,6 +229,7 @@ class Wave {
     this.speedY = 3;
     this.enemies = [];
     this.nextWaveTrigger = false;
+    this.markedForDeletion = false;
     this.create();
   }
   render(context) {
@@ -184,6 +246,7 @@ class Wave {
       enemy.draw(context);
     })
     this.enemies = this.enemies.filter(object => !object.markedForDeletion);
+    if (this.enemies.length <= 0) this.markedForDeletion = true;
   }
   create() {
     for (let y = 0; y < this.game.rows; y++) {
@@ -228,6 +291,9 @@ class Game {
     this.score = 0;
     this.gameOver = false;
 
+    this.bossArray = [];
+    this.restart();
+
     // event listeners
     window.addEventListener('keydown', e => {
       if (e.key === '1' && !this.fired) this.player.shoot();
@@ -256,6 +322,11 @@ class Game {
       projectile.update();
       projectile.draw(context);
     })
+    this.bossArray.forEach(boss => {
+      boss.draw(context);
+      boss.update();
+    })
+    this.bossArray = this.bossArray.filter(object => !object.markedForDeletion);
     this.player.draw(context);
     this.player.update();
     this.waves.forEach(wave => {
@@ -318,13 +389,16 @@ class Game {
       this.rows++;
     }
     this.waves.push(new Wave(this));
+    this.waves = this.waves.filter(object => !object.markedForDeletion);
   }
   restart() {
     this.player.restart();
     this.columns = 2;
     this.rows = 2;
     this.waves = [];
-    this.waves.push(new Wave(this));
+    this.bossArray = [];
+    //this.waves.push(new Wave(this));
+    this.bossArray.push(new Boss(this));
     this.waveCount = 1;
     this.score = 0;
     this.gameOver = false;
