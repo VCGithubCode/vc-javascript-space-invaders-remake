@@ -40,12 +40,18 @@ class SmallLaser extends Laser {
   }
   render(context) {
     super.render(context);
-
   }
 }
 
 class BigLaser extends Laser {
-
+  constructor(game) {
+    super(game);
+    this.width = 25;
+    this.damage = 0.7;
+  }
+  render(context) {
+    super.render(context);
+  }
 }
 
 class Player {
@@ -63,6 +69,7 @@ class Player {
     this.frameX = 0;
     this.jetsFrame = 1;
     this.smallLaser = new SmallLaser(this.game);
+    this.bigLaser = new BigLaser(this.game);
   }
   draw(context) {
     // handle sprite frame
@@ -71,6 +78,9 @@ class Player {
     } else if (this.game.keys.indexOf('2') > -1) {
       this.frameX = 2;
       this.smallLaser.render(context);
+    } else if (this.game.keys.indexOf('3') > -1) {
+      this.frameX = 3;
+      this.bigLaser.render(context);
     } else {
       this.frameX = 0;
     }
@@ -386,13 +396,13 @@ class Game {
       projectile.update();
       projectile.draw(context);
     })
+    this.player.draw(context);
+    this.player.update();
     this.bossArray.forEach(boss => {
       boss.draw(context);
       boss.update();
     })
     this.bossArray = this.bossArray.filter(object => !object.markedForDeletion);
-    this.player.draw(context);
-    this.player.update();
     this.waves.forEach(wave => {
       wave.render(context);
       if (wave.enemies.length < 1 && !wave.nextWaveTrigger && !this.gameOver) {
