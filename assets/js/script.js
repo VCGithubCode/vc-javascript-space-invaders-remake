@@ -1,3 +1,53 @@
+class Laser {
+  constructor(game) {
+    this.game = game;
+    this.x = 0;
+    this.y = 0;
+    this.height = this.game.height - 50;
+  }
+  render(context) {
+    this.x = this.game.player.x + this.game.player.width * 0.5 - this.width * 0.5;
+
+    context.save();
+    context.fillStyle = 'gold';
+    context.fillRect(this.x, this.y, this.width, this.height);
+    context.fillStyle = 'white';
+    context.fillRect(this.x + this.width * 0.2, this.y, this.width * 0.6, this.height);
+    context.restore();
+    
+    if (this.game.spriteUpdate) {
+      this.game.waves.forEach(wave => {
+        wave.enemies.forEach(enemy => {
+          if (this.game.checkCollision(enemy, this)) {
+            enemy.hit(this.damage);
+          }
+        })
+      })
+      this.game.bossArray.forEach(boss => {
+        if (this.game.checkCollision(boss, this)) {
+          boss.hit(this.damage);
+        }
+      })
+    }
+  }
+}
+
+class SmallLaser extends Laser {
+  constructor(game) {
+    super(game);
+    this.width = 5;
+    this.damage = 0.3;
+  }
+  render(context) {
+    super.render(context);
+
+  }
+}
+
+class BigLaser extends Laser {
+
+}
+
 class Player {
   constructor(game) {
     this.game = game;
@@ -12,11 +62,15 @@ class Player {
     this.jets_image = document.getElementById('player_jets');
     this.frameX = 0;
     this.jetsFrame = 1;
+    this.smallLaser = new SmallLaser(this.game);
   }
   draw(context) {
     // handle sprite frame
     if (this.game.keys.indexOf('1') > -1) {
       this.frameX = 1;
+    } else if (this.game.keys.indexOf('2') > -1) {
+      this.frameX = 2;
+      this.smallLaser.render(context);
     } else {
       this.frameX = 0;
     }
@@ -158,7 +212,7 @@ class Rhinomorph extends Enemy {
 }
 
 class Boss {
-  constructor(game) {
+  constructor(game, bossLives) {
     this.game = game;
     this.width = 200;
     this.height = 200;
@@ -166,7 +220,7 @@ class Boss {
     this.y = - this.height;
     this.speedX = Math.random() < 0.5 ? -1 : 1;
     this.speedY = 0;
-    this.lives = 10;
+    this.lives = bossLives;
     this.maxLives = this.lives;
     this.markedForDeletion = false;
     this.image = document.getElementById('boss');
@@ -176,21 +230,21 @@ class Boss {
   }
   draw(context) {
     context.drawImage(this.image, this.frameX * this.width, this.frameY * this.height, this.width, this.height, this.x, this.y, this.width, this.height);
-    if (this.lives > 0) {
+    if (this.lives >= 1) {
       context.save();
       context.textAlign = 'center';
       context.shadowOffsetX = 3;
       context.shadowOffsetY = 3;
       context.shadowColor = 'black';
-      context.fillText(this.lives, this.x + this.width * 0.5, this.y + 50);
+      context.fillText(Math.floor(this.lives), this.x + this.width * 0.5, this.y + 50);
       context.restore();
     }
   }
   update() {
     this.speedY = 0;
-    if (this.game.spriteUpdate && this.lives > 0) this.frameX = 0;
+    if (this.game.spriteUpdate && this.lives >= 1) this.frameX = 0;
     if (this.y < 0) this.y += 4;
-    if (this.x < 0 || this.x > this.game.width - this.width) {
+    if (this.x < 0 || this.x > this.game.width - this.width && this.lives >= 1) {
       this.speedX *= -1;
       this.speedY = this.height * 0.5;
     }
@@ -198,23 +252,32 @@ class Boss {
     this.y += this.speedY;
     // collision detection boss/projectiles
     this.game.projectilesPool.forEach(projectile => {
-      if (this.game.checkCollision(this, projectile) && !projectile.free && this.lives > 0) {
+      if (this.game.checkCollision(this, projectile) && !projectile.free && this.lives >= 1 && this.y >= 0) {
         this.hit(1);
         projectile.reset();
       }
-    });
-  // boss destroyed
+    })
+    // collision detection boss/player
+    if (this.game.checkCollision(this, this.game.player) && this.lives >= 1) {
+      this.game.gameOver = true;
+      this.lives = 0;
+    }
+    // boss destroyed
     if (this.lives < 1 && this.game.spriteUpdate) {
       this.frameX++;
-      if(this.frameX > this.maxFrame) {
+      if (this.frameX > this.maxFrame) {
         this.markedForDeletion = true;
         this.game.score += this.maxLives;
+        this.game.bossLives += 5;
+        if(!this.game.gameOver) this.game.newWave();
       }
+    }
+    // lose condition
+    if (this.y + this.height > this.game.height) this.game.gameOver = true;
   }
-}
   hit(damage) {
     this.lives -= damage;
-    if (this.lives > 0) this.frameX = 1;
+    if (this.lives >= 1) this.frameX = 1;
   }
 }
 
@@ -292,6 +355,7 @@ class Game {
     this.gameOver = false;
 
     this.bossArray = [];
+    this.bossLives = 10;
     this.restart();
 
     // event listeners
@@ -333,9 +397,7 @@ class Game {
       wave.render(context);
       if (wave.enemies.length < 1 && !wave.nextWaveTrigger && !this.gameOver) {
         this.newWave();
-        this.waveCount++;
         wave.nextWaveTrigger = true;
-        if (this.player.lives < this.player.maxLives) this.player.lives++;
       }
     })
   }
@@ -383,12 +445,18 @@ class Game {
     context.restore();
   }
   newWave() {
-    if (Math.random() < 0.5 && this.columns * this.enemySize < this.width * 0.8) {
-      this.columns++;
-    } else if (this.rows * this.enemySize < this.height * 0.6) {
-      this.rows++;
+    this.waveCount++;
+    if (this.player.lives < this.player.maxLives) this.player.lives++;
+    if (this.waveCount % 2 === 0) {
+      this.bossArray.push(new Boss(this, this.bossLives));
+    } else {
+      if (Math.random() < 0.5 && this.columns * this.enemySize < this.width * 0.8) {
+        this.columns++;
+      } else if (this.rows * this.enemySize < this.height * 0.6) {
+        this.rows++;
+      }
+      this.waves.push(new Wave(this));
     }
-    this.waves.push(new Wave(this));
     this.waves = this.waves.filter(object => !object.markedForDeletion);
   }
   restart() {
@@ -397,8 +465,9 @@ class Game {
     this.rows = 2;
     this.waves = [];
     this.bossArray = [];
+    this.bossLives = 10;
     //this.waves.push(new Wave(this));
-    this.bossArray.push(new Boss(this));
+    this.bossArray.push(new Boss(this, this.bossLives));
     this.waveCount = 1;
     this.score = 0;
     this.gameOver = false;
