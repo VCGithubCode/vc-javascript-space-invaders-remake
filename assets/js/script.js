@@ -57,7 +57,6 @@ class BigLaser extends Laser {
     if (this.game.player.energy > 1 && !this.game.player.cooldown) {
       super.render(context);
       this.game.player.frameX = 3;
-
     }
   }
 }
@@ -234,6 +233,66 @@ class Rhinomorph extends Enemy {
   }
 }
 
+class Eaglemorph extends Enemy {
+  constructor(game, positionX, positionY) {
+    super(game, positionX, positionY);
+    this.image = document.getElementById('eaglemorph');
+    this.frameX = 0;
+    this.maxFrame = 8;
+    this.frameY = Math.floor(Math.random() * 4);
+    this.lives = 4;
+    this.maxLives = this.lives;
+    this.shots = 0;
+  }
+  hit(damage) {
+    if (this.shots < 4) this.shoot();
+    this.lives -= damage;
+    this.frameX = this.maxLives - Math.floor(this.lives);
+    this.y += 3;
+  }
+  shoot() {
+    const projectile = this.game.getEnemyProjectile();
+    if (projectile){
+      projectile.start(this.x + this.width * 0.5, this.y + this.height * 0.5);
+      this.shots++;
+    }
+  }
+}
+
+class EnemyProjectile {
+  constructor(game) {
+    this.game = game;
+    this.width = 50;
+    this.height = 35;
+    this.x = 0;
+    this.y = 0;
+    this.speed = Math.random() * 3 + 2;
+    this.free = true;
+    this.image = document.getElementById('enemyProjectile');
+    this.frameX = Math.floor(Math.random() * 4);
+    this.frameY = Math.floor(Math.random() * 2);
+  }
+  draw(context) {
+    if (!this.free) {
+      context.drawImage(this.image, this.frameX * this.width, this.frameY * this.height, this.width, this.height, this.x, this.y, this.width, this.height);
+    }
+  }
+    update(){
+      if (!this.free) {
+        this.y += this.speed;
+      if (this.y > this.game.height) this.reset();
+      }
+  }
+  start(x, y) {
+    this.x = x - this.width * 0.5;
+    this.y = y;
+    this.free = false;
+    }
+  reset() {
+    this.free = true;
+  }
+}
+
 class Boss {
   constructor(game, bossLives) {
     this.game = game;
@@ -339,11 +398,14 @@ class Wave {
       for (let x = 0; x < this.game.columns; x++) {
         let enemyX = x * this.game.enemySize;
         let enemyY = y * this.game.enemySize;
-        if (Math.random() < 0.5) {
+        if (Math.random() < 0.8) {
+          this.enemies.push(new Eaglemorph(this.game, enemyX, enemyY));
+        } else if (Math.random() < 0.9) {
           this.enemies.push(new Rhinomorph(this.game, enemyX, enemyY));
         } else {
           this.enemies.push(new Beetlemorph(this.game, enemyX, enemyY));
         }
+
       }
     }
   }
@@ -367,8 +429,10 @@ class Game {
     this.enemySize = 80;
     
     this.waves = [];
-    this.waves.push(new Wave(this));
     this.waveCount = 1;
+    this.enemyProjectilesPool = [];
+    this.numberOfEnemyProjectiles = 15;
+    this.createEnemyProjectiles();
 
     this.spriteUpdate = false;
     this.spriteTimer = 0;
@@ -409,6 +473,10 @@ class Game {
       projectile.update();
       projectile.draw(context);
     })
+    this.enemyProjectilesPool.forEach(projectile => {
+      projectile.update();
+      projectile.draw(context);
+    })
     this.player.draw(context);
     this.player.update();
     this.bossArray.forEach(boss => {
@@ -434,6 +502,18 @@ class Game {
   getProjectile() {
     for (let i = 0; i < this.projectilesPool.length; i++) {
       if (this.projectilesPool[i].free) return this.projectilesPool[i];
+    }
+  }
+    //create enemy projectiles object pool
+  createEnemyProjectiles() {
+    for (let i = 0; i < this.numberOfEnemyProjectiles; i++) {
+      this.enemyProjectilesPool.push(new EnemyProjectile(this));
+    }
+  }
+  //get free enemy projectile object from the pool
+  getEnemyProjectile() {
+    for (let i = 0; i < this.enemyProjectilesPool.length; i++) {
+      if (this.enemyProjectilesPool[i].free) return this.enemyProjectilesPool[i];
     }
   }
   // collision detection between 2 rectangles
@@ -496,8 +576,8 @@ class Game {
     this.waves = [];
     this.bossArray = [];
     this.bossLives = 10;
-    //this.waves.push(new Wave(this));
-    this.bossArray.push(new Boss(this, this.bossLives));
+    this.waves.push(new Wave(this));
+    //this.bossArray.push(new Boss(this, this.bossLives));
     this.waveCount = 1;
     this.score = 0;
     this.gameOver = false;
