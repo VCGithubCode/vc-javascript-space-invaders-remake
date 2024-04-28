@@ -7,6 +7,7 @@ class Laser {
   }
   render(context) {
     this.x = this.game.player.x + this.game.player.width * 0.5 - this.width * 0.5;
+    this.game.player.energy -= this.damage;
 
     context.save();
     context.fillStyle = 'gold';
@@ -24,7 +25,7 @@ class Laser {
         })
       })
       this.game.bossArray.forEach(boss => {
-        if (this.game.checkCollision(boss, this)) {
+        if (this.game.checkCollision(boss, this) && boss.y > 0) {
           boss.hit(this.damage);
         }
       })
@@ -39,18 +40,25 @@ class SmallLaser extends Laser {
     this.damage = 0.3;
   }
   render(context) {
-    super.render(context);
+    if (this.game.player.energy > 1 && !this.game.player.cooldown) {
+      super.render(context);
+      this.game.player.frameX = 2;
+    }
   }
 }
 
 class BigLaser extends Laser {
   constructor(game) {
-    super(game);
-    this.width = 25;
-    this.damage = 0.7;
-  }
+      super(game);
+      this.width = 25;
+      this.damage = 0.7;
+    }
   render(context) {
-    super.render(context);
+    if (this.game.player.energy > 1 && !this.game.player.cooldown) {
+      super.render(context);
+      this.game.player.frameX = 3;
+
+    }
   }
 }
 
@@ -70,16 +78,17 @@ class Player {
     this.jetsFrame = 1;
     this.smallLaser = new SmallLaser(this.game);
     this.bigLaser = new BigLaser(this.game);
+    this.energy = 50;
+    this.maxEnergy = 100;
+    this.cooldown = false;
   }
   draw(context) {
     // handle sprite frame
     if (this.game.keys.indexOf('1') > -1) {
       this.frameX = 1;
     } else if (this.game.keys.indexOf('2') > -1) {
-      this.frameX = 2;
       this.smallLaser.render(context);
     } else if (this.game.keys.indexOf('3') > -1) {
-      this.frameX = 3;
       this.bigLaser.render(context);
     } else {
       this.frameX = 0;
@@ -88,6 +97,10 @@ class Player {
     context.drawImage(this.image, this.frameX * this.width, 0, this.width, this.height, this.x, this.y, this.width, this.height);
   }
   update() {
+    // energy
+    if (this.energy < this.maxEnergy) this.energy += 0.05;
+    if (this.energy < 1) this.cooldown = true;
+    else if (this.energy > this.maxEnergy * 0.2) this.cooldown = false;
     // horizontal movement
     if (this.game.keys.indexOf('ArrowLeft') > -1) {
       this.x -= this.speed;
@@ -445,6 +458,13 @@ class Game {
     for (let i = 0; i < this.player.lives; i++) {
       context.fillRect(20 + 20 * i,100,10,15);
     }
+    // energy
+    context.save();
+    this.player.cooldown? context.fillStyle = "red" : context.fillStyle = "gold";
+    for (let i = 0; i < this.player.energy; i++) {
+      context.fillRect(20 + 2 * i, 130, 2, 15);
+    }
+    context.restore();
     if (this.gameOver) {
       context.textAlign = 'center'
       context.font = "100px Impact";
