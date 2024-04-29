@@ -7,6 +7,6 @@
     background-image: url('../images/background.png');
 }
 
-#beetlemorph, #rhinomorph, #squidmorph, #eaglemorph, #enemyProjectile, #player, #player_jets, #boss {
+#beetlemorph, #rhinomorph, #squidmorph, #lobstermorph, #eaglemorph, #enemyProjectile, #player, #player_jets, #boss, #boss8 {
     display: none;
 }
