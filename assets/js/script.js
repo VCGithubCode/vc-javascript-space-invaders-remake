@@ -271,25 +271,48 @@ class EnemyProjectile {
     this.image = document.getElementById('enemyProjectile');
     this.frameX = Math.floor(Math.random() * 4);
     this.frameY = Math.floor(Math.random() * 2);
+    this.lives = 5;
   }
   draw(context) {
     if (!this.free) {
       context.drawImage(this.image, this.frameX * this.width, this.frameY * this.height, this.width, this.height, this.x, this.y, this.width, this.height);
     }
   }
-    update(){
-      if (!this.free) {
-        this.y += this.speed;
+  update() {
+    if (!this.free) {
+      this.y += this.speed;
       if (this.y > this.game.height) this.reset();
+      // check collision enemy projectile / player
+      if (this.game.checkCollision(this, this.game.player)) {
+        this.reset();
+        this.game.player.lives--;
+        if (this.game.player.lives < 1) this.game.gameOver;
       }
+      // check collision enemy projectile / player projectile
+      this.game.projectilesPool.forEach(projectile => {
+        if (this.game.checkCollision(this, projectile) && !projectile.free) {
+          projectile.reset();
+          this.hit(1);
+          if (this.lives < 1) this.reset();
+        }
+      })
+    }
   }
   start(x, y) {
     this.x = x - this.width * 0.5;
     this.y = y;
     this.free = false;
+    this.frameX = Math.floor(Math.random() * 4);
+    this.frameY = Math.floor(Math.random() * 2);
+    this.lives = 5;
+    this.speed = Math.random() * 3 + 2;
     }
   reset() {
     this.free = true;
+  }
+  hit(damage) {
+    this.lives -= damage;
+    this.speed *= 0.6;
   }
 }
 
@@ -398,9 +421,9 @@ class Wave {
       for (let x = 0; x < this.game.columns; x++) {
         let enemyX = x * this.game.enemySize;
         let enemyY = y * this.game.enemySize;
-        if (Math.random() < 0.8) {
+        if (Math.random() < 0.3) {
           this.enemies.push(new Eaglemorph(this.game, enemyX, enemyY));
-        } else if (Math.random() < 0.9) {
+        } else if (Math.random() < 0.6) {
           this.enemies.push(new Rhinomorph(this.game, enemyX, enemyY));
         } else {
           this.enemies.push(new Beetlemorph(this.game, enemyX, enemyY));
