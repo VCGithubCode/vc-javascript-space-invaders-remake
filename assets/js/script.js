@@ -233,6 +233,22 @@ class Rhinomorph extends Enemy {
   }
 }
 
+class Squidmorph extends Enemy {
+  constructor(game, positionX, positionY) {
+    super(game, positionX, positionY);
+    this.image = document.getElementById('squidmorph');
+    this.frameX = 0;
+    this.maxFrame = 16;
+    this.frameY = Math.floor(Math.random() * 4);
+    this.lives = 9;
+    this.maxLives = this.lives;
+  }
+    hit(damage) {
+      this.lives -= damage;
+      if (this.lives >= 1) this.frameX = this.maxLives - Math.floor(this.lives);
+  }
+}
+
 class Eaglemorph extends Enemy {
   constructor(game, positionX, positionY) {
     super(game, positionX, positionY);
@@ -421,10 +437,13 @@ class Wave {
       for (let x = 0; x < this.game.columns; x++) {
         let enemyX = x * this.game.enemySize;
         let enemyY = y * this.game.enemySize;
-        if (Math.random() < 0.3) {
-          this.enemies.push(new Eaglemorph(this.game, enemyX, enemyY));
-        } else if (Math.random() < 0.6) {
+        let randomNumber = Math.random();
+        if (randomNumber < 0.99) {
+          this.enemies.push(new Squidmorph(this.game, enemyX, enemyY));
+        } else if (randomNumber < 0.6) {
           this.enemies.push(new Rhinomorph(this.game, enemyX, enemyY));
+          } else if (randomNumber < 0.6) {
+          this.enemies.push(new Eaglemorph(this.game, enemyX, enemyY));
         } else {
           this.enemies.push(new Beetlemorph(this.game, enemyX, enemyY));
         }
