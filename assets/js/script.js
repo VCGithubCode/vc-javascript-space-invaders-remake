@@ -249,6 +249,22 @@ class Squidmorph extends Enemy {
   }
 }
 
+class Lobstermorph extends Enemy {
+  constructor(game, positionX, positionY) {
+    super(game, positionX, positionY);
+    this.image = document.getElementById('lobstermorph');
+    this.frameX = 0;
+    this.maxFrame = 14;
+    this.frameY = Math.floor(Math.random() * 4);
+    this.lives = 8;
+    this.maxLives = this.lives;
+  }
+    hit(damage) {
+      this.lives -= damage;
+      if (this.lives >= 1) this.frameX = this.maxLives - Math.floor(this.lives);
+  }
+}
+
 class Eaglemorph extends Enemy {
   constructor(game, positionX, positionY) {
     super(game, positionX, positionY);
@@ -344,9 +360,9 @@ class Boss {
     this.lives = bossLives;
     this.maxLives = this.lives;
     this.markedForDeletion = false;
-    this.image = document.getElementById('boss');
+    this.image = document.getElementById('boss8');
     this.frameX = 0;
-    this.frameY = Math.floor(Math.random() * 4);
+    this.frameY = Math.floor(Math.random() * 8);
     this.maxFrame = 11;
   }
   draw(context) {
@@ -438,12 +454,14 @@ class Wave {
         let enemyX = x * this.game.enemySize;
         let enemyY = y * this.game.enemySize;
         let randomNumber = Math.random();
-        if (randomNumber < 0.99) {
+        if (randomNumber < 0.2) {
           this.enemies.push(new Squidmorph(this.game, enemyX, enemyY));
-        } else if (randomNumber < 0.6) {
+        } else if (randomNumber < 0.4) {
           this.enemies.push(new Rhinomorph(this.game, enemyX, enemyY));
-          } else if (randomNumber < 0.6) {
+        } else if (randomNumber < 0.6) {
           this.enemies.push(new Eaglemorph(this.game, enemyX, enemyY));
+        } else if (randomNumber < 0.8) {
+          this.enemies.push(new Lobstermorph(this.game, enemyX, enemyY));
         } else {
           this.enemies.push(new Beetlemorph(this.game, enemyX, enemyY));
         }
